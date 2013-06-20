@@ -2,7 +2,6 @@
 File Info:
 --------------------------------------------------------------------------------
 Name: 				mp3fm.py
-Creators: 			Akshit Agarwal, Divyum Rastogi
 Libraries Used:     *eyeD3: Finding Song Info(ID3 MetaData)
 					(Install using: "sudo pip install eyeD3")
 					*glob: Listing all .mp3 files in folders
