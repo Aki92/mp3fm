@@ -137,7 +137,6 @@ class UpdateSongInfo(PackSongs):
 	def extract_info(self):
 		info = self.song_info
 		data = self.data
-		print data
 		if data['recording-list'] != []:			
 			result = data['recording-list'][0]
 			try:
@@ -178,7 +177,6 @@ class UpdateSongInfo(PackSongs):
 			except:
 				pass
 		else:
-			print song_name
 			info = {}
 		# Updating old song info with new info found from net
 		self.song_info = info
