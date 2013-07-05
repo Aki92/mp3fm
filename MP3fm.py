@@ -1,6 +1,6 @@
 """
 File Info:
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 Name: 				mp3fm.py
 Libraries Used:     *eyeD3: Finding Song Info(ID3 MetaData)
 					(Install using: "sudo pip install eyeD3")
@@ -11,13 +11,14 @@ Description:		"mp3fm" is an "mp3 folder making app" which AUTOMATICALLY
 					 create folders according to user choice from 
 					 TITLE/ARTIST/ALBUM/YEAR/DURATION/COMMENT of mp3 songs 						 
 					 present in a folder.
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 """
 
 import musicbrainzngs as mbz
 from shutil import move
 from glob import glob
 import subprocess
+import eyed3.id3
 import eyed3
 import os
 
@@ -114,7 +115,8 @@ class PackSongs(object):
 					folder_name = "Random"
 				self.check_folder(folder_name)
 				self.move_song(song, folder_name)	
-	
+
+				
 class UpdateSongInfo(PackSongs):
 	# Authenticate the client to query the Music Brainz Server
 	def authenticate(self):
@@ -123,48 +125,67 @@ class UpdateSongInfo(PackSongs):
 	def search_musicbrainz(self, song_name):
 		info = self.song_info
 		if info['title'] in [None, '', 'Unknown'] or 'Track' in info['title']:
-			info['title'] = song_name
+			info['title'] = song_name[:song_name.find('.mp3')]
+		for i in info:
+			if info[i] is None:
+				info[i] = ''
 		self.data = mbz.search_recordings(query=info['title'], limit=1, 
 							   artist=info['artist'], release=info['album'],
-							   date=info['year'], qdur=info['duration']/2000
+							   date=str(info['year']), qdur=str(info['duration'])
 							  )
 		
 	def extract_info(self):
 		info = self.song_info
 		data = self.data
-		try:
-			title = data['recording-list'][0]['title']
-			if title != '':
-				info['title'] = title
-		except:
-			pass
-		try:
-			artist = data['recording-list'][0]['artist-credit'][0]['artist']\
-																    ['name']
-			if artist != '':
-				info['artist'] = artist
-		except:
-			pass
-		try:
-			album = data['recording-list'][0]['release-list'][0]['title']
-			if album != '':
-				info['album'] = album
-		except:
-			pass
-		try:
-			year = data['recording-list'][0]['release-list'][0]['date']
-			if year != '':
-				info['year'] = year
-		except:
-			pass
-		try:
-			dur = data['recording-list'][0]['length'] / 1000
-			if dur != '':
-				info['duration'] = dur
-		except:
-			pass
+		print data
+		if data['recording-list'] != []:			
+			result = data['recording-list'][0]
+			try:
+				title = result['title']
+				if title != '':
+					info['title'] = title
+			except:
+				pass
+			try:
+				artist = result['artist-credit'][0]['artist']['name']
+				if artist != '':
+					info['artist'] = artist
+			except:
+				pass
+			try:
+				for res in result['release-list']:
+					if 'title' in res and res['title'] != title:
+						album = res['title']
+						break
+				if album != '':
+					info['album'] = album
+			except:
+				pass
+			try:
+				for res in result['release-list']:
+					if 'date' in res:
+						date = res['date'].split('-')
+						year = [i for i in date if len(i)==4][0]
+						break
+				if year != '':
+					info['year'] = year
+			except:
+				pass
+			try:
+				dur = data['recording-list'][0]['length'] / 1000
+				if dur != '':
+					info['duration'] = dur
+			except:
+				pass
+		else:
+			print song_name
+			info = {}
 		# Updating old song info with new info found from net
 		self.song_info = info
+	
+	# Converting string into unicode string using UTF-8 format
+	def convert_to_unicode(self, string):
+		return string.decode('utf-8')
 		
 	# Saving new song info
 	def save_info(self, song_name):
@@ -174,28 +195,42 @@ class UpdateSongInfo(PackSongs):
 		try:
 			mp3file = eyed3.load(song_name)
 			# Storing all details of song into song_info dictionary
+			if mp3file.tag is None:
+				mp3file.tag = eyed3.id3.Tag()
+				mp3file.tag.file_info = eyed3.id3.FileInfo(song_name)
+			# Updating title of song
 			try:
-				mp3file.tag.title = info['title']
+				mp3file.tag.title = self.convert_to_unicode(info['title'])
 			except:
-				mp3file.tag.title = ""
+				pass
+			# Updating artist of song
 			try:
-				mp3file.tag.artist = info['artist'] 
+				mp3file.tag.artist = self.convert_to_unicode(info['artist'])
 			except:
-				mp3file.tag.artist = ""
+				pass
+			# Updating song album
 			try:
-				mp3file.tag.album = info['album']
+				mp3file.tag.album = self.convert_to_unicode(info['album'])
 			except:
-				mp3file.tag.album = ""
+				pass
+			# Updating release_date of song
 			try:
-				mp3file.tag.best_release_date.year = info['year']
+				mp3file.tag.release_date = self.convert_to_unicode(info['year'])
 			except:
-				mp3file.tag.best_release_date.year = ""
+				pass
 		except:
 			pass
 		
 		try:			
 			# Saving new info back to song properties
 			mp3file.tag.save()
+		except:
+			pass
+
+		# Updating song name to title of song
+		try:
+			if info['title'] != '':
+				mp3file.rename(info['title'])
 		except:
 			pass
 		
@@ -208,6 +243,7 @@ class UpdateSongInfo(PackSongs):
 				self.extract_info()
 				self.save_info(song)
 
+				
 class UnpackFolders(PackSongs):
 	# Listing all folders 
 	def list_folders(self):
@@ -245,14 +281,14 @@ class UnpackFolders(PackSongs):
 			fh.write(str(index)+'. '+str(song)+'\n')
 			
 		# Writing moved songs in log file
-		fh.write('\n\n\n\n*** Songs MOVED while unpacking ***\n')
+		fh.write('\n\n\n*** Songs MOVED while unpacking ***\n')
 		for folder in moved_songs:
 			fh.write('\n\n'+str(folder)+':\n')
 			for index,song in enumerate(moved_songs[folder]):
 				fh.write(str(index)+'. '+str(song)+'\n')
 			
 		# Writing unmoved songs in log file
-		fh.write('\n\n\n\n*** Songs UNMOVED while unpacking ***\n')
+		fh.write('\n\n\n*** Songs UNMOVED while unpacking ***\n')
 		for folder in unmoved_songs:
 			fh.write('\n\n'+str(folder)+':\n')
 			for index,song in enumerate(unmoved_songs[folder]):
@@ -301,7 +337,7 @@ def main():
 		mp3fm.put_songs()
 		mp3fm.generate_log()
 		print("*** Folders made with a LOG file containing Songs Info. \
-			  present in every folder ***")
+present in every folder ***")
 	elif choice == 2:
 		mp3fm = UnpackFolders(input_folder)
 		mp3fm.unpack()
