@@ -2,8 +2,8 @@
 File Info:
 -------------------------------------------------------------------------------
 Name: 				mp3fm.py
-Libraries Used:     *eyeD3: Finding Song Info(ID3 MetaData)
-					(Install using: "sudo pip install eyeD3")
+Libraries Used:     *mutagen: Finding Song Info(ID3 MetaData)
+					(Install using: "sudo pip install mutagen")
 					*glob: Listing all .mp3 files in folders
 					*shutil: Moving a file from one place to another
 					
@@ -14,12 +14,11 @@ Description:		"mp3fm" is an "mp3 folder making app" which AUTOMATICALLY
 -------------------------------------------------------------------------------
 """
 
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
 import musicbrainzngs as mbz
 from shutil import move
 from glob import glob
-import subprocess
-import eyed3.id3
-import eyed3
 import os
 
 class PackSongs(object):
@@ -35,28 +34,28 @@ class PackSongs(object):
 		info = dict()
 		# Loading Song
 		try:
-			mp3file = eyed3.load(song_name)
+			self.mp3file = MP3(song_name, ID3=EasyID3)
 			# Storing all details of song into "info" dictionary
 			try:
-				info['title'] = mp3file.tag.title
+				info['title'] = str(self.mp3file['title'][0])
 			except:
-				info['title'] = ""
+				info['title'] = ''
 			try:
-				info['artist'] = mp3file.tag.artist
+				info['artist'] = str(self.mp3file['artist'][0])
 			except:
-				info['artist'] = ""
+				info['artist'] = ''
 			try:
-				info['album'] = mp3file.tag.album
+				info['album'] = str(self.mp3file['album'][0])
 			except:
-				info['album'] = ""
+				info['album'] = ''
 			try:
-				info['year'] = mp3file.tag.best_release_date.year
+				info['year'] = str(self.mp3file['date'][0])
 			except:
-				info['year'] = ""
+				info['year'] = ''
 			try:
-				info['duration'] = mp3file.info.time_secs * 1000
+				info['duration'] = int(self.mp3file.info.length * 1000)
 			except:
-				info['duration'] = ""
+				info['duration'] = ''
 		except:
 			info = {}
 		
@@ -73,10 +72,11 @@ class PackSongs(object):
 		
 	# Storing list of all .mp3 files
 	def list_mp3files(self, folder=''):
+		# All posibilities of writing mp3 considered ;)
 		if folder == '':
-			self.songs = glob('*.mp3')
+			self.songs = glob('*.??3')
 		else:
-			return glob(folder+'/*.mp3')
+			return glob(folder+'/*.??3')
 	
 	# Moving song to specific folder
 	def move_song(self, song, folder_name):
@@ -92,14 +92,15 @@ class PackSongs(object):
 		# Writing nfo data into log file
 		fh = open('PackLog.txt', 'w')
 		for folder in new_folders:
+			text = 'Folder	:	' + folder + '\n' + "-"*(12+len(folder)) + \
+			'\n\n' + 'Track Listing' + '\n' + "-"*len('Track Listing') + '\n'
 			try:
-				folder = folder.replace(' ', '\ ')
-				nfo = subprocess.check_output('eyeD3 -P nfo %s'%folder, 
-											  shell=True)
+				songs = os.listdir(folder)
+				for index,name in enumerate(songs):
+					text += str(index+1) + '. ' + name + '\n'
 			except:
 				continue
-			nfo = nfo[:nfo.find('======')]
-			fh.write(nfo+'\n\n\n')
+			fh.write(text+'\n\n\n')
 		fh.close()
 		
 	# Putting all songs in folders according to user choice
@@ -112,7 +113,7 @@ class PackSongs(object):
 			if info != {}:
 				folder_name = info[self.tag]
 				if folder_name in [None, '', 'Unknown']:
-					folder_name = "Random"
+					folder_name = 'Random'
 				self.check_folder(folder_name)
 				self.move_song(song, folder_name)	
 
@@ -124,11 +125,18 @@ class UpdateSongInfo(PackSongs):
 		
 	def search_musicbrainz(self, song_name):
 		info = self.song_info
-		if info['title'] in [None, '', 'Unknown'] or 'Track' in info['title']:
-			info['title'] = song_name[:song_name.find('.mp3')]
-		for i in info:
-			if info[i] is None:
-				info[i] = ''
+		if info['title'] == '' or 'Track' in info['title']:
+			# Checking all possibilies
+			if '.mp3' in song_name:
+				pos = song_name.find('.mp3')
+			elif '.MP3' in song_name:
+				pos = song_name.find('.MP3')
+			elif '.Mp3' in song_name:
+				pos = song_name.find('.Mp3')
+			else:
+				pos = song_name.find('.mP3')
+			info['title'] = song_name[:pos]
+			
 		self.data = mbz.search_recordings(query=info['title'], limit=1, 
 							   artist=info['artist'], release=info['album'],
 							   date=str(info['year']), qdur=str(info['duration'])
@@ -191,29 +199,24 @@ class UpdateSongInfo(PackSongs):
 		info = self.song_info
 		# Loading Song
 		try:
-			mp3file = eyed3.load(song_name)
-			# Storing all details of song into song_info dictionary
-			if mp3file.tag is None:
-				mp3file.tag = eyed3.id3.Tag()
-				mp3file.tag.file_info = eyed3.id3.FileInfo(song_name)
 			# Updating title of song
 			try:
-				mp3file.tag.title = self.convert_to_unicode(info['title'])
+				self.mp3file['title'] = self.convert_to_unicode(info['title'])
 			except:
 				pass
 			# Updating artist of song
 			try:
-				mp3file.tag.artist = self.convert_to_unicode(info['artist'])
+				self.mp3file['artist'] = self.convert_to_unicode(info['artist'])
 			except:
 				pass
 			# Updating song album
 			try:
-				mp3file.tag.album = self.convert_to_unicode(info['album'])
+				self.mp3file['album'] = self.convert_to_unicode(info['album'])
 			except:
 				pass
 			# Updating release_date of song
 			try:
-				mp3file.tag.release_date = self.convert_to_unicode(info['year'])
+				self.mp3file['date'] = self.convert_to_unicode(info['year'])
 			except:
 				pass
 		except:
@@ -221,14 +224,14 @@ class UpdateSongInfo(PackSongs):
 		
 		try:			
 			# Saving new info back to song properties
-			mp3file.tag.save()
+			self.mp3file.save()
 		except:
 			pass
 
 		# Updating song name to title of song
 		try:
 			if info['title'] != '':
-				mp3file.rename(info['title'])
+				os.rename(song_name, info['title']+'.mp3')
 		except:
 			pass
 		
@@ -327,7 +330,7 @@ def main():
 	
 	if choice == 1:
 		print("'mp3fm' gives you the choice to move songs into folders \
-			  according to given 6 categories:")
+according to given 6 categories:")
 		print(menu)
 		print "Enter Number corresponding to above given choices: ",
 		tag = tags[input()]
