@@ -7,20 +7,20 @@ have its information(ID3 metadata) embedded in it than it would update the song 
 online database.
 
 Features:   
-1. **PACK** Songs into folders according to their property (TITLE/ARTIST/ALBUM/YEAR/DURATION/COMMENT).
-2. **UNPACK** Songs back from folders made or you can also unpack songs from already made folders and pack them again using some other song property.   
-3. **UPDATE** Song properties using MusicBrainz online database.
-4. **GENERATE LOG** file after every operation, like generate 
+1. **PACK** Songs into folders according to their property (TITLE/ARTIST/ALBUM/YEAR/DURATION/COMMENT).          
+2. **UNPACK** Songs back from folders made or you can also unpack songs from already made folders and pack them again using some other song property.        
+3. **UPDATE** Song properties using MusicBrainz online database.          
+4. **GENERATE LOG** file after every operation, like generate.            
 
 
 
 ###Instructions to Follow:   
 
-1. Install eyeD3 Tool:    
-**`sudo pip install eyeD3` or `sudo easy_install eyeD3`**          
+1. Install **mutagen** Tool:    
+**`sudo pip install mutagen`**         
 
 2. Install musicbrainzngs Tool:
-**`pip install musicbrainzngs`**         
+**`sudo pip install musicbrainzngs`**         
 
 2. Keep **`MP3fm.py`** file with the Folder containing songs.
 
