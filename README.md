@@ -22,9 +22,9 @@ Features:
 2. Install musicbrainzngs Tool:
 **`sudo pip install musicbrainzngs`**         
 
-2. Keep **`MP3fm.py`** file with the Folder containing songs.
+3. Keep **`MP3fm.py`** file with the Folder containing songs.
 
-3. Run the code and follow instructions displayed in it.    
+4. Run the code and follow instructions displayed in it.    
 **`python MP3fm.py`**   
 
 
