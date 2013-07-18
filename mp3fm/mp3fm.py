@@ -2,13 +2,14 @@
 """
 File Info:
 -------------------------------------------------------------------------------
-Name: 				mp3fm.py
-Libraries Used:     *mutagen: Finding Song Info(ID3 MetaData)
+Name: 				 mp3fm.py
+
+Libraries Used:     *mutagen* : Finding Song Info(ID3 MetaData)
 					(Install using: "sudo pip install mutagen")
-					*glob: Listing all .mp3 files in folders
-					*shutil: Moving a file from one place to another
+					*glob* : Listing all .mp3 files in folders
+					*shutil* : Moving a file from one place to another
 					
-Description:		"mp3fm" is an "mp3 folder making app" which AUTOMATICALLY
+Description:		"mp3fm" is an "MP3 folder making app" which AUTOMATICALLY
 					 create folders according to user choice from 
 					 TITLE/ARTIST/ALBUM/YEAR/DURATION/COMMENT of mp3 songs 						 
 					 present in a folder.
@@ -22,15 +23,19 @@ from shutil import move
 from glob import glob
 import os
 
+"""
+	PackSongs pack songs into folders according to property choosen
+	by the user making easy to manage songs and keep them into folders
+"""
 class PackSongs(object):
-	# Initializing info to use for creating folders
+	""" Initializing info to use for creating folders """
 	def __init__(self, input_folder, tag=''):
 		self.tag = tag
 		self.folder = input_folder
 		self.change_cwd()
 		self.list_mp3files()
 		
-	# Finding song info
+	""" Finding song info """
 	def find_info(self, song_name):
 		info = dict()
 		# Loading Song
@@ -62,16 +67,18 @@ class PackSongs(object):
 		
 		self.song_info = info
 		
-	# Changing current working directory to user input folder to access songs
+	""" 
+		Changing current working directory to user input folder to access songs
+	"""
 	def change_cwd(self):
 		os.chdir(self.folder)
 	
-	# Checking if required folder exists otherwise create a new one
+	""" Checking if required folder exists otherwise create a new one """
 	def check_folder(self, folder_name):
 		if not os.path.exists(folder_name):
 			os.makedirs(folder_name)
 		
-	# Storing list of all .mp3 files
+	""" Storing list of all .mp3 files """
 	def list_mp3files(self, folder=''):
 		# All posibilities of writing mp3 considered ;)
 		if folder == '':
@@ -79,14 +86,17 @@ class PackSongs(object):
 		else:
 			return glob(folder+'/*.??3')
 	
-	# Moving song to specific folder
+	""" Moving song to specific folder """
 	def move_song(self, song, folder_name):
 		try:
 			move(song, folder_name)
 		except:
 			pass
 
-	# Generate a log file stating the songs inside each newly created directory
+	""" 
+		Generate a log file stating the songs inside each newly created
+		directory
+	"""
 	def generate_log(self):
 		# Listing all newly made folders
 		new_folders = [i for i in os.listdir('.') if(os.path.isdir(i))]
@@ -104,7 +114,7 @@ class PackSongs(object):
 			fh.write(text+'\n\n\n')
 		fh.close()
 		
-	# Putting all songs in folders according to user choice
+	""" Putting all songs in folders according to user choice """
 	def put_songs(self):
 		# Traversing all songs
 		for song in self.songs:
@@ -118,31 +128,34 @@ class PackSongs(object):
 				self.check_folder(folder_name)
 				self.move_song(song, folder_name)	
 
-				
+"""
+	UpdateSongInfo class updates all the songs information using online 
+	Music Brainz database.
+"""
 class UpdateSongInfo(PackSongs):
-	# Authenticate the client to query the Music Brainz Server
+	""" Authenticate the client to query the Music Brainz Server """
 	def authenticate(self):
 		mbz.set_useragent('mp3fm', 1.0, 'akshit.jiit@gmail.com')
 		
+	""" Searching music brainz db for particular song """
 	def search_musicbrainz(self, song_name):
 		info = self.song_info
 		if info['title'] == '' or 'Track' in info['title']:
-			# Checking all possibilies
+			# Converting song_name into lower case so that we don't have to 
+			# search for all .MP3 combination like(mp3,mP3,Mp3,MP3)
+			song_name = song_name.lower()
 			if '.mp3' in song_name:
 				pos = song_name.find('.mp3')
-			elif '.MP3' in song_name:
-				pos = song_name.find('.MP3')
-			elif '.Mp3' in song_name:
-				pos = song_name.find('.Mp3')
-			else:
-				pos = song_name.find('.mP3')
 			info['title'] = song_name[:pos]
 			
+		# Finding song information in DB of music brainz and taking only 1
+		# result in response by using limit=1
 		self.data = mbz.search_recordings(query=info['title'], limit=1, 
 							   artist=info['artist'], release=info['album'],
 							   date=str(info['year']), qdur=str(info['duration'])
 							  )
-		
+	
+	""" Extracting information from result found in above function """
 	def extract_info(self):
 		info = self.song_info
 		data = self.data
@@ -190,11 +203,11 @@ class UpdateSongInfo(PackSongs):
 		# Updating old song info with new info found from net
 		self.song_info = info
 	
-	# Converting string into unicode string using UTF-8 format
+	""" Converting string into unicode string using UTF-8 format """
 	def convert_to_unicode(self, string):
 		return string.decode('utf-8')
 		
-	# Saving new song info
+	""" Saving new song info """
 	def save_info(self, song_name):
 		# Loading new changed song info
 		info = self.song_info
@@ -235,7 +248,8 @@ class UpdateSongInfo(PackSongs):
 				os.rename(song_name, info['title']+'.mp3')
 		except:
 			pass
-		
+	
+	""" Function calling all other functions to update song info """
 	def update_id3(self):
 		self.authenticate()
 		for song in self.songs:
@@ -245,14 +259,17 @@ class UpdateSongInfo(PackSongs):
 				self.extract_info()
 				self.save_info(song)
 
-				
+"""
+	UnpackFolders class is unpacking all the folders so that all songs comes
+	out from folders and reside at one place 
+"""
 class UnpackFolders(PackSongs):
-	# Listing all folders 
+	""" Listing all folders """
 	def list_folders(self):
 		self.folders_to_unpack = [i for i in os.listdir('.') 
 								     if(os.path.isdir(i))]
 
-	# Redefining the function which is Moving song to specific folder
+	""" Redefining the function which is Moving song to specific folder """
 	def move_song(self, folder_name, song):
 		folder = folder_name
 		try:
@@ -270,7 +287,10 @@ class UnpackFolders(PackSongs):
 			except:
 				self.unmoved_songs[folder] = [song]
 
-	# Redefining the function which is Generating log according to diff. types
+	""" 
+		Redefining the function which is Generating log according to 
+		different types
+	"""
 	def generate_log(self):
 		prev_songs = self.existing_songs
 		moved_songs = self.moved_songs
@@ -295,7 +315,8 @@ class UnpackFolders(PackSongs):
 			fh.write('\n\n'+str(folder)+':\n')
 			for index,song in enumerate(unmoved_songs[folder]):
 				fh.write(str(index)+'. '+str(song)+'\n')
-				
+	
+	""" Running all other functions to unpack folders """
 	def unpack(self):
 		# Making folders to create log file
 		self.existing_songs = self.songs
@@ -312,7 +333,10 @@ class UnpackFolders(PackSongs):
 			for song in songs:
 				self.move_song(folder, song)
 				
-			
+"""
+	Main function which is asking user for choices and making appropriate 
+	class objects and calling appropriate functions corresponding to them
+"""
 def main():
 	# User Choice Menu
 	options = "1. Pack Songs into Folders.\n2. Unpack all Songs from Folders\n\
@@ -321,29 +345,31 @@ def main():
 	tags = {1: 'title', 2: 'artist', 3: 'album', 4: 'year', 5: 'duration',
 			6: 'comment'}
 
-	print("Ensure that mp3fm.py & songs folder should be at SAME location\n")
-	
-	print("\nEnter Folder's Name containing all songs: ")
-	input_folder = raw_input()
-	
 	print(options)
 	choice = input()
+	
+	# Input folder would be the folder which contains all songs.
+	input_folder = os.getcwd()
 	
 	if choice == 1:
 		print("'mp3fm' gives you the choice to move songs into folders \
 according to given 6 categories:")
 		print(menu)
 		print "Enter Number corresponding to above given choices: ",
+	
 		tag = tags[input()]
 		mp3fm = PackSongs(input_folder, tag)
 		mp3fm.put_songs()
 		mp3fm.generate_log()
+		
 		print("*** Folders made with a LOG file containing Songs Info. \
 present in every folder ***")
+
 	elif choice == 2:
 		mp3fm = UnpackFolders(input_folder)
 		mp3fm.unpack()
 		mp3fm.generate_log()
+
 	elif choice == 3:
 		mp3fm = UpdateSongInfo(input_folder)
 		mp3fm.update_id3()
