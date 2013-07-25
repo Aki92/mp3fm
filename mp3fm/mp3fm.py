@@ -2,7 +2,7 @@
 """
 File Info:
 -------------------------------------------------------------------------------
-Name: 				 mp3fm.py
+Name:               mp3fm.py
 
 Libraries Used:     *mutagen* : Finding Song Info(ID3 MetaData)
                     (Install using: "sudo pip install mutagen")
