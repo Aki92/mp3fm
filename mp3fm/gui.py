@@ -12,6 +12,9 @@ class Gui(object):
         self.tag = ''
         
     def folder_choice(self):
+        msg = "\t     Welcome to MP3fm!\n\n Select the Songs \
+Folder containing Bulk of Songs"
+        eg.msgbox(msg, 'MP3fm')
         """ Opens folder choice box and confirm it using index box"""
         fname = eg.diropenbox('Songs Folder', 'Choose', os.getcwd())
         fn = fname[fname.rfind('/')+1:]
