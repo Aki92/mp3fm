@@ -57,11 +57,29 @@ class PackSongs(object):
         Changing current working directory to user input folder to access songs
         """
         os.chdir(self.folder)
+
+    def remove_schars(self, fn, char):
+        """ Removing special chars from folder name """
+        fl = 0
+        while fl != 1:
+            try:
+                fn.remove(char)
+            except:
+                fl = 1
+        return fn
     
     def check_folder(self, folder_name):
         """ Checking if required folder exists otherwise create a new one """
         if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
+            try:
+                os.makedirs(folder_name)
+            except:
+                fn = list(folder_name)
+                special_chars = [':', '/', '\\', '*', '?', '<', '>', '|']
+                for i in special_chars:
+                    fn = self.remove_schars(fn, i)
+                folder_name = ''.join(fn)
+                os.makedirs(folder_name)
         
     def list_mp3files(self, folder=''):
         """ Storing list of all .mp3 files """

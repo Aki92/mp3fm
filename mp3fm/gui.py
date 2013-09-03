@@ -10,7 +10,7 @@ class Gui(object):
         self.choice = 0
         self.folder = ''
         self.tag = ''
-        
+
     def folder_choice(self):
         msg = "\t     Welcome to MP3fm!\n\n Select the Songs \
 Folder containing Bulk of Songs"
@@ -29,7 +29,7 @@ Folder containing Bulk of Songs"
         else:
             exit(0)
         return (self.folder, self.choice, self.tag)
-            
+
     def user_choice(self):
         """ Gives different options to call on Songs """
         fname = self.folder
@@ -53,7 +53,7 @@ Folders', 'Update Properties(ID3) of songs', 'Quit')
             exit(0)
 
         self.choice = ch
-           
+
     def finish_msg(self):
         ch = self.choice
         if ch == 1:
@@ -62,25 +62,32 @@ Folders', 'Update Properties(ID3) of songs', 'Quit')
             msg = 'Songs UNPACKED Successfully'
         elif ch == 3:
             msg = 'Songs UPDATED Successfully'
-            
+
         if(ch == 3):
-            options = ('Quit')
-        if(ch == 2):
-            options = ('View LOG file', 'Delete Empty Folders', 'Quit')
+            options = ('Use Again', 'Quit')
+        elif(ch == 2):
+            options = ('Use Again', 'View LOG file', 'Delete Empty Folders', \
+'Quit')
         else:
-            options = ('View LOG file', 'Quit')
-            
+            options = ('Use Again', 'View LOG file', 'Quit')
+
         choice = eg.indexbox(msg, 'MP3fm', options)
-        if choice == 0 and ch == 1:
+
+        # Importing mp3fm code to run program again
+        import mp3fm
+        if choice == 0:
+            mp3fm.main()
+
+        if choice == 1 and ch == 1:
             msg = 'PackLog File'
             text = open('PackLog.txt').read()
             eg.textbox(msg, 'MP3fm', text)
         elif ch == 2:
-            if choice == 0:
+            if choice == 1:
                 msg = 'UnpackLog File'
                 text = open('UnpackLog.txt').read()
                 eg.textbox(msg, 'MP3fm', text)
-            elif  choice == 1:
+            elif  choice == 2:
                 msg = 'Want to Delete Empty Folders left out after Unpacking?'
                 opt = eg.ynbox(msg, 'MP3fm')
                 if opt == 1:
@@ -93,22 +100,23 @@ Folders', 'Update Properties(ID3) of songs', 'Quit')
                             del_folders.append(f)
                         except:
                             pass
-                    print del_folders
                     fobj = open('UnpackLog.txt', 'a')
                     fobj.write('\n\n\n*** Empty Folders Removed left out after\
 Unpacking ***\n\n\n')
                     for f in del_folders:
                         fobj.write(f+'\n')
                     fobj.close()
-                # Options after deleting yes/no box
+                else:
+                    self.finish_msg()
+
+                # Options after deleting empty folders
                 msg = 'Empty Folders Deleted Successfully'
-                options = ('View LOG file', 'Quit')
+                options = ('Use Again', 'View LOG file', 'Quit')
                 cho = eg.indexbox(msg, 'MP3fm', options)
                 if cho == 0:
+                    mp3fm.main()
+                elif cho == 1:
                     msg = 'Updated UnpackLog File'
                     text = open('UnpackLog.txt').read()
                     eg.textbox(msg, 'MP3fm', text)
-                else:
-                    exit(0)                    
-        else:
-            exit(0)
+        exit(0)
