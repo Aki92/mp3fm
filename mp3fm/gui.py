@@ -17,6 +17,8 @@ Folder containing Bulk of Songs"
         eg.msgbox(msg, 'MP3fm')
         """ Opens folder choice box and confirm it using index box"""
         fname = eg.diropenbox('Songs Folder', 'Choose', os.getcwd())
+        if fname is None:
+            exit(0)
         fn = fname[fname.rfind('/')+1:]
         msg = 'Choosen Songs folder:: \t%s' % fn
         options = ('Continue', 'Choose Again', 'Quit')
