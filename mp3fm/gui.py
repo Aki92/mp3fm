@@ -58,23 +58,21 @@ Folders', 'Update Properties(ID3) of songs', 'Quit')
 
     def finish_msg(self):
         ch = self.choice
+        #print ch
         if ch == 1:
             msg = 'Songs PACKED Successfully'
+            options = ('Use Again', 'View LOG file', 'Quit')
         elif ch == 2:
             msg = 'Songs UNPACKED Successfully'
-        elif ch == 3:
-            msg = 'Songs UPDATED Successfully'
-
-        if(ch == 3):
-            options = ('Use Again', 'Quit')
-        elif(ch == 2):
             options = ('Use Again', 'View LOG file', 'Delete Empty Folders', \
 'Quit')
-        else:
-            options = ('Use Again', 'View LOG file', 'Quit')
+        elif ch == 3:
+            msg = 'Songs UPDATED Successfully'
+            options = ('Use Again', 'Quit')
+            # Running automatically and selecting 1st option
+            #eg.indexbox(msg, 'MP3fm', options)
 
         choice = eg.indexbox(msg, 'MP3fm', options)
-
         # Importing mp3fm code to run program again
         import mp3fm
         if choice == 0:

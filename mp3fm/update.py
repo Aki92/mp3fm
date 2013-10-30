@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import musicbrainzngs as mbz
+import easygui as eg
 import pack
 import os
 
@@ -17,22 +18,26 @@ class UpdateSongInfo(pack.PackSongs):
         
     def search_musicbrainz(self, song_name):
         """ Searching music brainz db for particular song """
-        info = self.song_info
-        if info['title'] == '' or 'Track' in info['title']:
-            # Converting song_name into lower case so that we don't have to 
-            # search for all .MP3 combination like(mp3,mP3,Mp3,MP3)
-            song_name = song_name.lower()
-            if '.mp3' in song_name:
-                pos = song_name.find('.mp3')
-            info['title'] = song_name[:pos]
-            
-        # Finding song information in DB of music brainz and taking only 1
-        # result in response by using limit=1
-        self.data = mbz.search_recordings(query=info['title'], limit=1, 
-                            artist=info['artist'], release=info['album'],
-                            date=str(info['year']), qdur=str(info['duration'])
-                            )
-    
+        try:
+            info = self.song_info
+            if info['title'] == '' or 'Track' in info['title']:
+                # Converting song_name into lower case so that we don't have to 
+                # search for all .MP3 combination like(mp3,mP3,Mp3,MP3)
+                song_name = song_name.lower()
+                if '.mp3' in song_name:
+                    pos = song_name.find('.mp3')
+                info['title'] = song_name[:pos]
+                
+            # Finding song information in DB of music brainz and taking only 1
+            # result in response by using limit=1
+            self.data = mbz.search_recordings(query=info['title'], limit=1, 
+                                artist=info['artist'], release=info['album'],
+                                date=str(info['year']), qdur=str(info['duration'])
+                                )
+        except:
+            eg.msgbox("Please Check your Internet Connection!")
+            return 1
+
     def extract_info(self):
         """ Extracting information from result found in above function """
         info = self.song_info
@@ -138,6 +143,8 @@ class UpdateSongInfo(pack.PackSongs):
         for song in self.songs:
             self.find_info(song)
             if self.song_info != {}:
-                self.search_musicbrainz(song)
+                err = self.search_musicbrainz(song)
+                if err == 1:
+                    return 1
                 self.extract_info()
                 self.save_info(song)
